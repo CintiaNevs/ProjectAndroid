@@ -1,4 +1,4 @@
-package com.example.projectandroid
+package com.example.projectandroid.telas
 
 import android.content.Intent
 import android.os.Bundle
@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.projectandroid.R
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
                     ZelusSplashScreen(
                         onAcessarClick = {
                             try {
-                                val intent = Intent(this, Class.forName("com.example.projectandroid.FormularioActivity"))
+                                val intent = Intent(this, Class.forName("com.example.projectandroid.telas.FormularioActivity"))
                                 startActivity(intent)
                             } catch (e: Exception) {
                                 e.printStackTrace()

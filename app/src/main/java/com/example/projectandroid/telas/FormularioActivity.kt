@@ -1,10 +1,14 @@
-package com.example.projectandroid
+package com.example.projectandroid.telas // <-- Agora ele sabe que está na pasta organizada!
 
+import android.Manifest
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,15 +23,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.projectandroid.R // <-- Puxa as suas imagens da pasta principal
 
 class FormularioActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +56,31 @@ class FormularioActivity : ComponentActivity() {
 fun TelaDesignFigma() {
     val context = LocalContext.current
     var selectedItem by remember { mutableIntStateOf(0) }
+
+    // VARIÁVEL PARA GUARDAR A FOTO TIRADA
+    var imagemCapturada by remember { mutableStateOf<Bitmap?>(null) }
+
+    // 2. O QUE ACONTECE DEPOIS DE TIRAR A FOTO
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            imagemCapturada = bitmap // Guarda a foto
+            Toast.makeText(context, "Foto capturada com sucesso!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 1. O QUE ACONTECE AO PEDIR PERMISSÃO
+    val permissaoCameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Se o usuário deixou, abre a câmera!
+            cameraLauncher.launch(null)
+        } else {
+            Toast.makeText(context, "Precisamos da câmera para a denúncia!", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -83,9 +114,7 @@ fun TelaDesignFigma() {
                             },
                             selected = selectedItem == index,
                             onClick = { selectedItem = index },
-                            colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = Color.Transparent
-                            )
+                            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
                         )
                     }
                 }
@@ -128,9 +157,8 @@ fun TelaDesignFigma() {
                     )
                 }
 
-                // A IMAGEM DA CIDADE NO FUNDO VERDE
                 Image(
-                    painter = painterResource(id = R.drawable.cidade_zelus), // Mude para o nome correto da sua imagem
+                    painter = painterResource(id = R.drawable.cidade_zelus), // Mantenha o nome da sua imagem aqui
                     contentDescription = "Ilustração da cidade Zelus",
                     modifier = Modifier
                         .height(200.dp)
@@ -147,14 +175,31 @@ fun TelaDesignFigma() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 32.dp, vertical = 40.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                        .padding(horizontal = 32.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
+                    // SE A FOTO FOI TIRADA, ELA VAI APARECER AQUI!
+                    imagemCapturada?.let { bmp ->
+                        Image(
+                            bitmap = bmp.asImageBitmap(),
+                            contentDescription = "Foto da Denúncia",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                        Text("Foto anexada!", color = Color(0xFF13C69D), fontWeight = FontWeight.Bold)
+                    }
+
                     BotaoZelus(
                         texto = "Nova Denúncia",
                         icone = Icons.Default.Notifications,
-                        onClick = { Toast.makeText(context, "Abrindo Câmera e GPS...", Toast.LENGTH_SHORT).show() }
+                        onClick = {
+                            // AQUI A MÁGICA ACONTECE: Pede a permissão e abre a câmera
+                            permissaoCameraLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     )
 
                     BotaoZelus(
@@ -208,10 +253,4 @@ fun BotaoZelus(texto: String, icone: ImageVector, onClick: () -> Unit) {
             color = Color.Black
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DesignPreview() {
-    TelaDesignFigma()
 }

@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     ZelusSplashScreen(
                         onAcessarClick = {
                             try {
-                                val intent = Intent(this, Class.forName("com.example.projectandroid.FormularioActivity"))
+                                val intent = Intent(this, Class.forName("com.example.projectandroid.telas.FormularioActivity"))
                                 startActivity(intent)
                             } catch (e: Exception) {
                                 e.printStackTrace()
