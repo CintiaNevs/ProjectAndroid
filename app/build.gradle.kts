@@ -52,7 +52,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
 
     // --- SENSORES (GPS) ---
-    implementation("com.google.android.gms:play-services-location:21.2.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // --- NUVEM (Retrofit) ---
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

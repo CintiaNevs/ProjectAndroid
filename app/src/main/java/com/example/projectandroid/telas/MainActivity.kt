@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Comando que remove a barra roxa e faz a tela ocupar tudo!
+        // Comando que remove a barra roxa e faz a tela ocupar tudo
         enableEdgeToEdge()
 
         setContent {
@@ -62,7 +62,7 @@ fun ZelusSplashScreen(onAcessarClick: () -> Unit) {
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
 
-        // Título "Zelus" estilizado
+        // Título
         Text(
             text = "Zelus",
             fontSize = 72.sp, // Aumentei o tamanho
@@ -78,7 +78,7 @@ fun ZelusSplashScreen(onAcessarClick: () -> Unit) {
             )
         )
 
-        // AGRUPAMENTO: Colocamos a Imagem e os Textos juntos na mesma Column
+        // AGRUPAMENTO: Coloco a Imagem e os Textos juntos na mesma coluna
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.zelus_app), // Certifique-se de que a imagem continua sendo zelus_app
