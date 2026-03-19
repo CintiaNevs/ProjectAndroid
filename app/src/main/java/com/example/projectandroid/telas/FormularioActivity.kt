@@ -82,7 +82,7 @@ fun AplicativoZelus() {
         10 -> 1
         11 -> 2
         12 -> 3
-        4 -> 4 // Acende o ícone do boneco na tela Sobre o App
+        4 -> 4
         else -> telaAtual
     }
 
@@ -153,6 +153,7 @@ fun AplicativoZelus() {
                             selected = abaAtiva == index,
                             onClick = {
                                 if (telaAtual in 10..12) {
+                                    // Bloqueio se estiver no meio da denúncia
                                     if (index == 0) {
                                         telaAtual = 0
                                         Toast.makeText(context, "Denúncia cancelada.", Toast.LENGTH_SHORT).show()
@@ -160,8 +161,15 @@ fun AplicativoZelus() {
                                         Toast.makeText(context, "Termine ou cancele a denúncia primeiro!", Toast.LENGTH_SHORT).show()
                                     }
                                 } else {
-                                    if (index == 1) permissaoCameraLauncher.launch(Manifest.permission.CAMERA)
-                                    else telaAtual = index
+                                    // 👇 A MÁGICA FOI ADICIONADA AQUI 👇
+                                    if (index == 1) {
+                                        permissaoCameraLauncher.launch(Manifest.permission.CAMERA) // Abre a Câmera
+                                    } else if (index == 2) {
+                                        // Clicou no mapa fora de hora! Avisa o usuário:
+                                        Toast.makeText(context, "Para iniciar, toque no '+' e tire uma foto primeiro!", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        telaAtual = index // Navega normalmente para Home, Lista ou Sobre
+                                    }
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
@@ -225,7 +233,6 @@ fun TelaHome(onNovaDenunciaClick: () -> Unit, onVerDenunciasClick: () -> Unit, o
     }
 }
 
-// 👇 TELA 4: SOBRE O APLICATIVO (Com o teu texto exato!) 👇
 @Composable
 fun TelaSobreApp(onVoltarClick: () -> Unit, paddingBarra: PaddingValues) {
     Column(
@@ -236,22 +243,9 @@ fun TelaSobreApp(onVoltarClick: () -> Unit, paddingBarra: PaddingValues) {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Título Branco Arredondado
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White,
-            modifier = Modifier.fillMaxWidth().height(60.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowLeft,
-                    contentDescription = "Voltar",
-                    tint = Color.Black,
-                    modifier = Modifier.clickable { onVoltarClick() }
-                )
+        Surface(shape = RoundedCornerShape(16.dp), color = Color.White, modifier = Modifier.fillMaxWidth().height(60.dp)) {
+            Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Default.KeyboardArrowLeft, contentDescription = "Voltar", tint = Color.Black, modifier = Modifier.clickable { onVoltarClick() })
                 Spacer(modifier = Modifier.width(16.dp))
                 Text("Sobre O Aplicativo", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             }
@@ -259,24 +253,11 @@ fun TelaSobreApp(onVoltarClick: () -> Unit, paddingBarra: PaddingValues) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Cartão Verde Claro com o Texto
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFFD6F5DA),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // AQUI ESTÁ A INTRODUÇÃO DO TEU TEXTO
-                Text(
-                    text = "O Zelus é um aplicativo criado para ajudar cidadãos a denunciar problemas urbanos de forma rápida e simples.",
-                    fontSize = 15.sp, color = Color.DarkGray
-                )
+        Surface(shape = RoundedCornerShape(24.dp), color = Color(0xFFD6F5DA), modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "O Zelus é um aplicativo criado para ajudar cidadãos a denunciar problemas urbanos de forma rápida e simples.", fontSize = 15.sp, color = Color.DarkGray)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // AQUI ESTÃO OS TÓPICOS DO TEU TEXTO
                 val topicos = listOf(
                     "Facilitar o registro de problemas urbanos na cidade",
                     "Permitir que cidadãos enviem denúncias com foto e localização",
@@ -293,15 +274,8 @@ fun TelaSobreApp(onVoltarClick: () -> Unit, paddingBarra: PaddingValues) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // Logótipo no final
                 Box(modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center) {
-                    Image(
-                        painter = painterResource(id = R.drawable.zelus_app),
-                        contentDescription = "Logo Zelus",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Image(painter = painterResource(id = R.drawable.zelus_app), contentDescription = "Logo Zelus", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
                 }
             }
         }
