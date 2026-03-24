@@ -70,7 +70,6 @@ fun AplicativoZelus() {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    // ESTADOS: 0=Home, 3=Lista, 4=Sobre, 10=Foto, 11=Mapa, 12=Formulário Texto
     var telaAtual by remember { mutableIntStateOf(0) }
     var imagemCapturada by remember { mutableStateOf<Bitmap?>(null) }
     var enderecoDetectado by remember { mutableStateOf("Buscando sua rua...") }
@@ -88,7 +87,11 @@ fun AplicativoZelus() {
 
     fun buscarLocalizacao() {
         try {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            val cts = com.google.android.gms.tasks.CancellationTokenSource()
+            fusedLocationClient.getCurrentLocation(
+                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                cts.token
+            ).addOnSuccessListener { location ->
                 if (location != null) {
                     val geocoder = Geocoder(context, Locale.getDefault())
                     val enderecos = geocoder.getFromLocation(location.latitude, location.longitude, 1)
@@ -98,11 +101,17 @@ fun AplicativoZelus() {
                         tituloRua = if (numero.isNotEmpty()) "$rua, $numero" else rua
                         val cidade = enderecos[0].locality ?: "Cidade desconhecida"
                         enderecoDetectado = "$rua - $cidade"
+                    } else {
+                        enderecoDetectado = "Endereço não encontrado"
+                        tituloRua = "Rua não identificada"
                     }
                 } else {
                     enderecoDetectado = "Localização não encontrada"
                     tituloRua = "Nenhuma Rua"
                 }
+            }.addOnFailureListener {
+                enderecoDetectado = "Erro ao obter localização"
+                tituloRua = "Erro GPS"
             }
         } catch (e: SecurityException) {
             enderecoDetectado = "Sem permissão de GPS"
@@ -153,7 +162,6 @@ fun AplicativoZelus() {
                             selected = abaAtiva == index,
                             onClick = {
                                 if (telaAtual in 10..12) {
-                                    // Bloqueio se estiver no meio da denúncia
                                     if (index == 0) {
                                         telaAtual = 0
                                         Toast.makeText(context, "Denúncia cancelada.", Toast.LENGTH_SHORT).show()
@@ -161,14 +169,12 @@ fun AplicativoZelus() {
                                         Toast.makeText(context, "Termine ou cancele a denúncia primeiro!", Toast.LENGTH_SHORT).show()
                                     }
                                 } else {
-
                                     if (index == 1) {
-                                        permissaoCameraLauncher.launch(Manifest.permission.CAMERA) // Abre a Câmera
+                                        permissaoCameraLauncher.launch(Manifest.permission.CAMERA)
                                     } else if (index == 2) {
-                                        // Clicou no mapa fora de hora! Avisa o usuário:
                                         Toast.makeText(context, "Para iniciar, toque no '+' e tire uma foto primeiro!", Toast.LENGTH_LONG).show()
                                     } else {
-                                        telaAtual = index // Navega normalmente para Home, Lista ou Sobre
+                                        telaAtual = index
                                     }
                                 }
                             },
@@ -189,7 +195,6 @@ fun AplicativoZelus() {
                 )
                 3 -> TelaVerDenuncias(listaDeDenuncias = bancoDeDados, paddingBarra = innerPadding)
                 4 -> TelaSobreApp(onVoltarClick = { telaAtual = 0 }, paddingBarra = innerPadding)
-
                 10 -> TelaNovaDenuncia(imagem = imagemCapturada, onConfirmarClick = { launcherGps.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }, onRefazerFotoClick = { permissaoCameraLauncher.launch(Manifest.permission.CAMERA) }, paddingBarra = innerPadding)
                 11 -> TelaLocalizacao(endereco = enderecoDetectado, ruaTitle = tituloRua, onProsseguirClick = { telaAtual = 12 }, paddingBarra = innerPadding)
                 12 -> TelaDescricaoDenuncia(
@@ -224,7 +229,14 @@ fun TelaHome(onNovaDenunciaClick: () -> Unit, onVerDenunciasClick: () -> Unit, o
             }
         }
         Surface(shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp), color = Color.White, modifier = Modifier.fillMaxWidth().weight(1f)) {
-            Column(modifier = Modifier.fillMaxSize().padding(start = 32.dp, top = 40.dp, end = 32.dp, bottom = paddingBarra.calculateBottomPadding() + 16.dp), verticalArrangement = Arrangement.spacedBy(45.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 32.dp, end = 32.dp, top = 40.dp, bottom = paddingBarra.calculateBottomPadding() + 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 BotaoZelus(texto = "Nova Denúncia", icone = Icons.Default.Notifications, onClick = onNovaDenunciaClick)
                 BotaoZelus(texto = "Ver Denúncias", icone = Icons.AutoMirrored.Filled.List, onClick = onVerDenunciasClick)
                 BotaoZelus(texto = "Sobre O Aplicativo", icone = Icons.Default.Info, onClick = onSobreClick)
@@ -337,14 +349,28 @@ fun TelaVerDenuncias(listaDeDenuncias: List<Denuncia>, paddingBarra: PaddingValu
 fun TelaNovaDenuncia(imagem: Bitmap?, onConfirmarClick: () -> Unit, onRefazerFotoClick: () -> Unit, paddingBarra: PaddingValues) {
     Box(modifier = Modifier.fillMaxSize()) {
         Surface(shape = RoundedCornerShape(topStart = 80.dp, topEnd = 80.dp), color = Color(0xFFF3FFF5), modifier = Modifier.fillMaxSize().padding(top = 100.dp)) {}
-        Column(modifier = Modifier.fillMaxSize().padding(bottom = paddingBarra.calculateBottomPadding()).padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = paddingBarra.calculateBottomPadding() + 16.dp)
+                .padding(top = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text("Nova Denúncia", fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(30.dp))
-            Box(modifier = Modifier.fillMaxWidth(0.75f).aspectRatio(9f/16f).clip(RoundedCornerShape(24.dp)).background(Color(0xFF3B3253)), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.75f)
+                    .aspectRatio(3f / 4f)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFF3B3253)),
+                contentAlignment = Alignment.Center
+            ) {
                 if (imagem != null) Image(bitmap = imagem.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 else Text("Câmera Pronta", color = Color.White)
             }
-            Spacer(modifier = Modifier.height(35.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = onConfirmarClick, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA7EAB0)), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(0.6f).height(50.dp)) {
                 Text("Confirmar Localização", color = Color.Black, fontWeight = FontWeight.Bold)
             }
@@ -354,6 +380,7 @@ fun TelaNovaDenuncia(imagem: Bitmap?, onConfirmarClick: () -> Unit, onRefazerFot
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Refazer Foto", color = Color.Black, fontWeight = FontWeight.Bold)
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -370,7 +397,13 @@ fun TelaLocalizacao(endereco: String, ruaTitle: String, onProsseguirClick: () ->
         Spacer(modifier = Modifier.height(30.dp))
 
         Surface(modifier = Modifier.fillMaxWidth().weight(1f), shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp), color = Color.White) {
-            Column(modifier = Modifier.padding(24.dp).padding(bottom = paddingBarra.calculateBottomPadding() + 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .padding(bottom = paddingBarra.calculateBottomPadding() + 16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Surface(modifier = Modifier.fillMaxWidth().height(60.dp), shape = RoundedCornerShape(20.dp), color = Color(0xFFF3FFF5), border = BorderStroke(2.dp, Color(0xFF13C69D))) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(Color(0xFFEFFFF1)), contentAlignment = Alignment.Center)
@@ -381,7 +414,7 @@ fun TelaLocalizacao(endereco: String, ruaTitle: String, onProsseguirClick: () ->
                 }
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Box(modifier = Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(30.dp)).background(Color(0xFFE0E0E0)), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.fillMaxWidth().height(350.dp).clip(RoundedCornerShape(30.dp)).background(Color(0xFFE0E0E0)), contentAlignment = Alignment.Center) {
                     Image(painter = painterResource(id = R.drawable.mapa_), contentDescription = "Mapa Detectado", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
 
@@ -407,7 +440,11 @@ fun TelaDescricaoDenuncia(onEnviarClick: (String, String) -> Unit, paddingBarra:
     val opcoesDeProblema = listOf("BURACO NA RUA", "POSTE QUEBRADO", "LIXO NA RUA", "VAZAMENTO DE ÁGUA", "OUTROS")
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).padding(bottom = paddingBarra.calculateBottomPadding()).verticalScroll(rememberScrollState()),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = paddingBarra.calculateBottomPadding())
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(48.dp))
