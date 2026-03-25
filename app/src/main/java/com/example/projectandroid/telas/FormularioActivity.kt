@@ -201,7 +201,7 @@ fun AplicativoZelus() {
                     onEnviarClick = { tipoEscolhido, descricaoDigitada ->
                         val novaDenuncia = Denuncia(tipo = tipoEscolhido, descricao = descricaoDigitada, endereco = enderecoDetectado, imagem = imagemCapturada)
                         bancoDeDados = bancoDeDados + novaDenuncia
-                        Toast.makeText(context, "Denúncia salva com sucesso!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Denúncia salva com sucesso!!!", Toast.LENGTH_LONG).show()
                         telaAtual = 0
                     },
                     paddingBarra = innerPadding
